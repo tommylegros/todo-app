@@ -5,14 +5,19 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Factory\AppFactory;
 use Symfony\Component\Dotenv\Dotenv;
 use Slim\Middleware\BodyParsingMiddleware;
+use Slim\Views\Twig;
+use Slim\Views\TwigMiddleware;
 
 require __DIR__ . '/../vendor/autoload.php';
 
 $dotenv = new Dotenv();
 $dotenv->load(__DIR__.'/../.env');
 
-$supabaseUrl = getenv('SUPABASE_URL');
-$supabaseKey = getenv('SUPABASE_ANON_KEY');
+//$supabaseUrl = getenv('SUPABASE_URL');
+//$supabaseKey = getenv('SUPABASE_ANON_KEY');
+
+$supabaseUrl = "https://facrhftxwqguxxpsjjlv.supabase.co/rest/v1";
+$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhY3JoZnR4d3FndXh4cHNqamx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODE2MjU1MTksImV4cCI6MTk5NzIwMTUxOX0.mLxdZZl5NpyGSlfSN96-fWNsfWclabekn3jbBg44NJQ";
 
 $service = new PHPSupabase\Service(
     $supabaseKey, 
@@ -23,6 +28,13 @@ $db = $service->initializeDatabase('test_todo', 'id');
 
 $app = AppFactory::create();
 $app->addBodyParsingMiddleware();
+
+$twig = Twig::create(__DIR__ . '/../templates', ['cache' => false]);
+$app->add(TwigMiddleware::create($app, $twig));
+
+$app->get('/', function (Request $request, Response $response, $args) use ($twig) {
+    return $twig->render($response, 'index.twig', $args);
+});
 
 $app->post('/todos', function (Request $request, Response $response, $args) use ($db) {
     $input = $request->getParsedBody();
@@ -39,20 +51,26 @@ $app->post('/todos', function (Request $request, Response $response, $args) use 
         'completed' => $completed,
     ]);
     
-    if ($insertResult->error()) {
+    if (isset($insertResult['error'])) {
         $response->getBody()->write(json_encode(['error' => 'Failed to create todo item']));
         return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
     }
     
-    $newTodo = $insertResult->data()[0];
+    $newTodo = $insertResult[0];
     $response->getBody()->write(json_encode($newTodo));
     return $response->withHeader('Content-Type', 'application/json');    
 
 });
 
-$app->get('/', function (Request $request, Response $response, $args) {
-    $response->getBody()->write("Hello world!");
-    return $response;
+$app->get('/static/{file:.+}', function (Request $request, Response $response, array $args) {
+    $file = __DIR__ . '/../static/' . $args['file'];
+
+    if (file_exists($file)) {
+        $response->getBody()->write(file_get_contents($file));
+        return $response->withHeader('Content-Type', mime_content_type($file));
+    }
+
+    return $response->withStatus(404);
 });
 
 $app->run();
