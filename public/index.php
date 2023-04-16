@@ -13,11 +13,8 @@ require __DIR__ . '/../vendor/autoload.php';
 $dotenv = new Dotenv();
 $dotenv->load(__DIR__.'/../.env');
 
-//$supabaseUrl = getenv('SUPABASE_URL');
-//$supabaseKey = getenv('SUPABASE_ANON_KEY');
-
-$supabaseUrl = "https://facrhftxwqguxxpsjjlv.supabase.co/rest/v1";
-$supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhY3JoZnR4d3FndXh4cHNqamx2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODE2MjU1MTksImV4cCI6MTk5NzIwMTUxOX0.mLxdZZl5NpyGSlfSN96-fWNsfWclabekn3jbBg44NJQ";
+$supabaseUrl = getenv('SUPABASE_URL');
+$supabaseKey = getenv('SUPABASE_ANON_KEY');
 
 $service = new PHPSupabase\Service(
     $supabaseKey, 
